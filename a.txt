@@ -1,0 +1,79 @@
+#include <iostream>
+#include <raylib.h>
+#include <rcamera.h>
+using namespace std;
+
+int main()
+{
+    const int WIDTH = 800, HEIGHT = 800;
+    const char *TITLE = "3d with raylib";
+    const int FPS = 144;
+
+    InitWindow(WIDTH, HEIGHT, TITLE);
+    SetTargetFPS(FPS);
+
+    // Camera
+    Camera3D camera = {0};
+    camera.position = (Vector3){50.0f, 5.0f, 50.0f};
+    camera.target = (Vector3){0.0f, 0.0f, 0.0f};
+    camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+    camera.fovy = 60.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
+
+    Model model = LoadModel("res/plane.obj");
+    Texture2D texture = LoadTexture("res/plane_diffuse.png");
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+
+    // Sun
+    Vector3 sun_position = {0.0f, 300.0f, 0.0f}; // Up in the sky
+    float sun_radius = 5.0f;
+    Vector3 light_direction = {-1.0f, -1.0f, -1.0f};
+
+    // Shader
+    Shader shader = LoadShader(0, TextFormat("res/base.fs", 330)); // 330 for desktop
+
+    model.materials[0].shader = shader;
+
+    Vector3 plane_position = {0.0f, 5.0f, 0.0f};
+    // Vector3 cube_positon = { 20.0f, 5.0f, 20.0f};
+
+    int lightDirLoc = GetShaderLocation(shader, "lightDir");
+    SetShaderValue(shader, lightDirLoc, &light_direction, SHADER_UNIFORM_VEC3);
+
+    DisableCursor();
+
+    while (!WindowShouldClose())
+    {
+        UpdateCamera(&camera, CAMERA_FREE);
+
+        /*if (IsKeyDown(KEY_LEFT_CONTROL))
+        {
+            camera.position.y -= 0.1f;
+        }
+        else if (IsKeyDown(KEY_SPACE))
+        {
+            camera.position.y += 0.1f;
+        }*/
+
+        if (IsKeyPressed(KEY_C))
+            EnableCursor();
+        else if (IsKeyPressed(KEY_X))
+            DisableCursor();
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+        BeginMode3D(camera);
+        DrawModel(model, plane_position, 1.0f, WHITE);
+        // DrawCube(cube_positon, 2.0f, 2.0f, 2.0f, RED);
+        DrawSphere(sun_position, sun_radius, YELLOW); // Sun
+        DrawGrid(20, 10.0f);
+
+        EndMode3D();
+        DrawFPS(10, 10);
+        EndDrawing();
+    }
+
+    CloseWindow();
+
+    return 0;
+}

@@ -1,0 +1,8 @@
+add a few objects on a plane
+learn basic lightning - shaders/model_shader
+chasing camera that follows a moving object - getframetime
+more model loading - sketchfab, poly pizza, kenney.nl
+add texture and materials
+collisions
+
+small 3d world - walk around, interact with objects (press a key near a cube to change its color), maybe even place or remove cubes like in minecraft

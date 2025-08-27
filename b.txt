@@ -1,0 +1,43 @@
+#include <iostream>
+#include <raylib.h>
+
+int main()
+{
+    const int WIDTH = 800, HEIGHT = 800;
+    const char *TITLE = "3d with raylib";
+    const int FPS = 144;
+
+    InitWindow(WIDTH, HEIGHT, TITLE);
+    SetTargetFPS(FPS);
+
+    // Camera
+    Camera3D camera = {0};
+    camera.position = (Vector3){50.0f, 5.0f, 50.0f};
+    camera.target = (Vector3){0.0f, 0.0f, 0.0f};
+    camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+    camera.fovy = 60.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
+
+    // Sun
+    Vector3 sun_position = {0.0f, 0.0f, 0.0f};
+    float sun_radius = 5.0f;
+
+    DisableCursor();
+
+    while (!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(BLACK);
+        BeginMode3D(camera);
+        DrawSphere(sun_position, sun_radius, YELLOW);
+        DrawGrid(20, 10.0f);
+
+        EndMode3D();
+        DrawFPS(10, 10);
+        EndDrawing();
+    }
+
+    CloseWindow();
+
+    return 0;
+}
