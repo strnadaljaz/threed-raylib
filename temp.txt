@@ -6,7 +6,7 @@
 
 #define GLSL_VERSION 330
 #define RLIGHTS_IMPLEMENTATION
-#include "../rlights.h"
+#include "rlights.h"
 
 int main()
 {
@@ -30,6 +30,10 @@ int main()
     camera.fovy = 60.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 
+    RLG_UseLight(0, true);
+    RLG_SetLightType(0, RLG_OMNILIGHT);
+    RLG_SetLightVec3(0, RLG_LIGHT_POSITION, camera.position);
+
     bool fullscreen = false;
     bool grid = true; 
     bool cursor = false;
@@ -37,35 +41,29 @@ int main()
     // Sun
     Vector3 sun_position = {0.0f, 0.0f, 0.0f};
     float sun_radius = 15.0f;
+    // Earth
+    float orbit_radius = 30.0f;
+    Vector3 earth_position = {0.0f, 0.0f, orbit_radius};
+    float earth_radius = 2.5f;
+    // Moon
+    float moon_orbit_radius = 5.0f;
+    Vector3 moon_position = {0.0f, 0.0f, orbit_radius + 5.0f};
+    float moon_radius = 0.5f;
+
+    Mesh sphere_mesh = GenMeshSphere(earth_radius, 32, 32);
+    Model earth_model = LoadModelFromMesh(sphere_mesh);
 
     Shader shader = LoadShader("shaders/glsl330/model.vs", "shaders/glsl330/model.fs");
 
-    // Earth
-    float earth_orbit_radius = 30.0f;
-    Vector3 earth_position = {0.0f, 0.0f, earth_orbit_radius};
-    float earth_radius = 2.5f;
-    float earth_speed = 60.0f;
-    Mesh earth_mesh = GenMeshSphere(earth_radius, 32, 32);
-    Model earth_model = LoadModelFromMesh(earth_mesh);
     earth_model.materials[0].shader = shader;
-    earth_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
-    
-    // Moon
-    float moon_orbit_radius = 5.0f;
-    Vector3 moon_position = {0.0f, 0.0f, earth_orbit_radius + 5.0f};
-    float moon_radius = 0.5f;
-    float moon_speed = 4.48459959f;
-    Mesh moon_mesh = GenMeshSphere(moon_radius, 32, 32);
-    Model moon_model = LoadModelFromMesh(moon_mesh); 
-    moon_model.materials[0].shader = shader;
-    moon_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = LIGHTGRAY;
 
-    unsigned int sunlight = 1;
-    RLG_SetLightType(sunlight, RLG_OMNILIGHT);
-    RLG_SetLightVec3(sunlight, RLG_LIGHT_POSITION, sun_position);
-    RLG_SetLightValue(sunlight, RLG_LIGHT_ENERGY, 10.0f);
-    RLG_SetLightValue(sunlight, RLG_LIGHT_DISTANCE, 150.0f);
+    unsigned int sunlight = 0;
+    RLG_SetLightType(sunlight, RLG_DIRLIGHT);
+
+    RLG_SetLightVec3(sunlight, RLG_LIGHT_DIRECTION, Vector3{-1, -1, 0});
+
     RLG_SetLightColor(sunlight, WHITE);
+
     RLG_UseLight(sunlight, true);
 
     float last_time = 0.0f;
@@ -111,12 +109,11 @@ int main()
         }
 
         if (current_time - last_time >= 0.05f)
-        {
+        {        DrawGrid(20, 10.0f);
             last_time = current_time;
 
-            earth_position = getNewObjectPosition(earth_orbit_radius, current_time, sun_position, earth_speed);
-            moon_position = getNewObjectPosition(moon_orbit_radius, current_time, earth_position, moon_speed);
-            RLG_SetLightVec3(sunlight, RLG_LIGHT_POSITION, sun_position);
+            earth_position = getNewEarthPosition(orbit_radius, current_time);
+            moon_position = getNewMoonPosition(moon_orbit_radius, current_time, earth_position);
         }
 
         if (!cursor) 
@@ -128,22 +125,22 @@ int main()
         BeginMode3D(camera);
         RLG_DrawModel(earth_model, earth_position, 1.0f, WHITE);
         DrawSphere(sun_position, sun_radius, YELLOW);
-        RLG_DrawModel(moon_model, moon_position, 1.0f, WHITE);
-        drawOrbit(earth_orbit_radius, sun_position);
-        drawOrbit(moon_orbit_radius, earth_position);
+        //DrawSphere(earth_position, earth_radius, BLUE);
+        DrawSphere(moon_position, moon_radius, GRAY);
+        drawEarthOrbit(orbit_radius);
+        //DrawText3D(GetFontDefault(), "Earth", {earth_position.x, 3.0f, earth_position.z}, 0.8f, 0.1f, 0.0f, false, WHITE);
+        drawMoonOrbit(moon_orbit_radius, earth_position);
         if (grid) 
-        { 
+        {
             DrawGrid(20, 10.0f);
         }
+        UnloadModel(earth_model);
+        RLG_DestroyContext(ctx);
+        UnloadShader(shader);
         EndMode3D();
         DrawFPS(10, 10);
         EndDrawing();
     }
-
-    // Cleanup resources after the main loop
-    UnloadModel(earth_model);
-    RLG_DestroyContext(ctx);
-    UnloadShader(shader);
 
     CloseWindow();
 
